@@ -7,13 +7,14 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+	"regexp"
 	"strings"
 	"sync"
 	"time"
 )
 
 const configFile = ".irdocker.json"
-const version = "1.0.0"
+const version = "1.1.0"
 
 type Config struct {
 	Registries []Registry `json:"registries"`
@@ -425,6 +426,156 @@ func cmdList() {
 	fmt.Println()
 }
 
+func mirroredImageStr(reg Registry, namespace, name, tag string) string {
+	if namespace == "library" {
+		return fmt.Sprintf("%s/%s:%s", reg.Host, name, tag)
+	}
+	return fmt.Sprintf("%s/%s/%s:%s", reg.Host, namespace, name, tag)
+}
+
+func cmdCompose(filePath string) {
+	data, err := os.ReadFile(filePath)
+	if err != nil {
+		fmt.Printf("❌ Cannot read file: %v\n", err)
+		os.Exit(1)
+	}
+	content := string(data)
+
+	imageLineRe := regexp.MustCompile(`(?m)^(\s+image:\s+)(.+)$`)
+	allMatches := imageLineRe.FindAllStringSubmatch(content, -1)
+
+	seen := map[string]bool{}
+	var images []string
+	for _, m := range allMatches {
+		img := strings.TrimSpace(m[2])
+		img = strings.Trim(img, `'"`)
+		if img != "" && !seen[img] {
+			seen[img] = true
+			images = append(images, img)
+		}
+	}
+
+	if len(images) == 0 {
+		fmt.Println("⚠️  No image entries found in the compose file.")
+		os.Exit(0)
+	}
+
+	cfg := loadConfig()
+	fmt.Printf("\n🐳 Docker Compose: %s\n", filePath)
+	fmt.Printf("📦 Found %d unique image(s), checking %d registries...\n\n", len(images), len(cfg.Registries))
+
+	type imgResult struct {
+		original string
+		mirrored string
+		regName  string
+		found    bool
+	}
+
+	imgResults := make([]imgResult, len(images))
+	var wg sync.WaitGroup
+	for i, img := range images {
+		wg.Add(1)
+		go func(i int, img string) {
+			defer wg.Done()
+			namespace, name, tag := parseImage(img)
+			regResults := make([]CheckResult, len(cfg.Registries))
+			var wg2 sync.WaitGroup
+			for j, reg := range cfg.Registries {
+				wg2.Add(1)
+				go func(j int, reg Registry) {
+					defer wg2.Done()
+					regResults[j] = checkRegistry(reg, namespace, name, tag)
+				}(j, reg)
+			}
+			wg2.Wait()
+			for _, r := range regResults {
+				if r.Status == StatusFound {
+					imgResults[i] = imgResult{
+						original: img,
+						mirrored: mirroredImageStr(r.Registry, namespace, name, tag),
+						regName:  r.Registry.Name,
+						found:    true,
+					}
+					return
+				}
+			}
+			imgResults[i] = imgResult{original: img}
+		}(i, img)
+	}
+	wg.Wait()
+
+	// Build replacement map
+	replacements := map[string]string{}
+	for _, r := range imgResults {
+		if r.found {
+			replacements[r.original] = r.mirrored
+		}
+	}
+
+	// Replace image lines in content
+	newContent := imageLineRe.ReplaceAllStringFunc(content, func(match string) string {
+		sub := imageLineRe.FindStringSubmatch(match)
+		prefix := sub[1]
+		img := strings.Trim(strings.TrimSpace(sub[2]), `'"`)
+		if mirrored, ok := replacements[img]; ok {
+			return prefix + mirrored
+		}
+		return match
+	})
+
+	// Output paths
+	dir := filepath.Dir(filePath)
+	base := filepath.Base(filePath)
+	ext := filepath.Ext(base)
+	stem := strings.TrimSuffix(base, ext)
+	oldBase := stem + ".old" + ext
+	mirroredPath := filepath.Join(dir, "docker-compose-mirrored.yaml")
+	oldPath := filepath.Join(dir, oldBase)
+
+	if err := os.WriteFile(mirroredPath, []byte(newContent), 0644); err != nil {
+		fmt.Printf("❌ Failed to write %s: %v\n", mirroredPath, err)
+		os.Exit(1)
+	}
+
+	// Print table
+	maxImgLen := 10
+	for _, r := range imgResults {
+		if len(r.original) > maxImgLen {
+			maxImgLen = len(r.original)
+		}
+	}
+	hdrFmt := fmt.Sprintf("  %%s %%-%ds  %%-%ds  %%s\n", maxImgLen+2, 20)
+	fmt.Printf("📋 Image Mirror Report:\n\n")
+	fmt.Printf(hdrFmt, " ", "Image", "Registry", "Mirrored Image")
+	fmt.Println("  " + strings.Repeat("─", maxImgLen+55))
+	for _, r := range imgResults {
+		if r.found {
+			fmt.Printf(hdrFmt, "✅", r.original, r.regName, r.mirrored)
+		} else {
+			fmt.Printf(hdrFmt, "❌", r.original, "—", "no mirror found")
+		}
+	}
+	fmt.Println()
+
+	found := 0
+	for _, r := range imgResults {
+		if r.found {
+			found++
+		}
+	}
+	fmt.Printf("  %d/%d images mirrored → wrote %s\n\n", found, len(images), mirroredPath)
+
+	// Print apply commands
+	fmt.Printf("🔧 Apply changes:\n\n")
+	fmt.Printf("  mv %s %s\n", filePath, oldPath)
+	fmt.Printf("  mv %s %s\n", mirroredPath, filePath)
+	if dir == "." {
+		fmt.Printf("  docker compose up -d\n\n")
+	} else {
+		fmt.Printf("  docker compose -f %s up -d\n\n", filePath)
+	}
+}
+
 func cmdReset() {
 	cfg := Config{Registries: defaultRegistries}
 	if err := saveConfig(cfg); err != nil {
@@ -442,6 +593,7 @@ irdocker v%s — Check Iranian Docker Mirrors
 USAGE:
   irdocker <image[:tag]>           Check image across all registries
   irdocker check <image[:tag]>     Same as above
+  irdocker <compose-file.yaml>     Mirror all images in a docker-compose file
   irdocker list                    List configured registries
   irdocker add <name> <host>       Add a new registry
   irdocker remove <host>           Remove a registry
@@ -452,6 +604,7 @@ EXAMPLES:
   irdocker nginx
   irdocker nginx:1.25-alpine
   irdocker gitea/gitea:latest
+  irdocker docker-compose.yaml
   irdocker add RunFlare mirror-docker.runflare.com
   irdocker remove focker.ir
 
@@ -492,6 +645,10 @@ func main() {
 			usage()
 			os.Exit(1)
 		}
-		cmdCheck(args)
+		if strings.HasSuffix(cmd, ".yaml") || strings.HasSuffix(cmd, ".yml") {
+			cmdCompose(cmd)
+		} else {
+			cmdCheck(args)
+		}
 	}
 }

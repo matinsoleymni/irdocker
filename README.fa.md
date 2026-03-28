@@ -31,6 +31,9 @@ irdocker nginx
 irdocker nginx:1.25-alpine
 irdocker gitea/gitea:latest
 
+# میرور کردن تمام ایمیج‌های یه فایل docker-compose
+irdocker docker-compose.yaml
+
 # نمایش لیست میرورها
 irdocker list
 
@@ -47,6 +50,8 @@ irdocker reset
 ---
 
 ## نمونه خروجی
+
+**بررسی ایمیج:**
 
 ```
 🔍 Checking image: library/nginx:latest
@@ -66,6 +71,29 @@ irdocker reset
 
 ────────────────────────────────────────────────────
 Result: 2 found, 1 not found, 2 error(s)
+```
+
+**Docker Compose:**
+
+```
+🐳 Docker Compose: docker-compose.yaml
+📦 Found 3 unique image(s), checking 9 registries...
+
+📋 Image Mirror Report:
+
+    Image               Registry              Mirrored Image
+  ───────────────────────────────────────────────────────────────────────
+  ✅ nginx:latest        Focker.ir             focker.ir/nginx:latest
+  ✅ postgres:15         Focker.ir             focker.ir/postgres:15
+  ✅ redis:7-alpine      Focker.ir             focker.ir/redis:7-alpine
+
+  3/3 images mirrored → wrote docker-compose-mirrored.yaml
+
+🔧 Apply changes:
+
+  mv docker-compose.yaml docker-compose.old.yaml
+  mv docker-compose-mirrored.yaml docker-compose.yaml
+  docker compose up -d
 ```
 
 ### معنی آیکون‌ها
@@ -101,6 +129,7 @@ Result: 2 found, 1 not found, 2 error(s)
 ## ویژگی‌ها
 
 - بررسی **همزمان** تمام میرورها (سریع)
+- پشتیبانی از **docker-compose** — میرور کردن خودکار همه ایمیج‌ها و تولید فایل جدید
 - پشتیبانی از **Docker Registry v2 Auth** (نتایج دقیق)
 - نمایش **دقیق خطاهای شبکه** (timeout، DNS، TLS و...)
 - قابلیت **افزودن میرور دلخواه**

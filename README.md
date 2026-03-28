@@ -31,6 +31,9 @@ irdocker gitea/gitea:latest
 # Explicit check subcommand
 irdocker check redis:7
 
+# Mirror all images in a docker-compose file
+irdocker docker-compose.yaml
+
 # List all configured registries
 irdocker list
 
@@ -45,6 +48,8 @@ irdocker reset
 ```
 
 ## Example Output
+
+**Image check:**
 
 ```
 🔍 Checking image: library/nginx:latest
@@ -64,6 +69,29 @@ irdocker reset
 
 ──────────────────────────────────────────────────
 Result: 2 found, 3 not available
+```
+
+**Docker Compose:**
+
+```
+🐳 Docker Compose: docker-compose.yaml
+📦 Found 3 unique image(s), checking 9 registries...
+
+📋 Image Mirror Report:
+
+    Image               Registry              Mirrored Image
+  ───────────────────────────────────────────────────────────────────────
+  ✅ nginx:latest        Focker.ir             focker.ir/nginx:latest
+  ✅ postgres:15         Focker.ir             focker.ir/postgres:15
+  ✅ redis:7-alpine      Focker.ir             focker.ir/redis:7-alpine
+
+  3/3 images mirrored → wrote docker-compose-mirrored.yaml
+
+🔧 Apply changes:
+
+  mv docker-compose.yaml docker-compose.old.yaml
+  mv docker-compose-mirrored.yaml docker-compose.yaml
+  docker compose up -d
 ```
 
 ## Default Registries
