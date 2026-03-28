@@ -2,6 +2,8 @@
 
 Check Iranian Docker mirror registries for image availability — instantly.
 
+[دایکومنت فارسی](./Readme.fa.md)
+
 ## Install
 
 ```bash
