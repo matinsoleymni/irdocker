@@ -1,3 +1,12 @@
+DRY="${DRY_RUN:-0}"
+
+run() {
+  if [[ "$DRY" == "1" ]]; then
+    printf '[dry-run] '; printf '%q ' "$@"; echo
+  else
+    "$@"
+  fi
+}
 # Pick completion dir
 pick_compdir() {
   if [[ -n "$COMPDIR" ]]; then
