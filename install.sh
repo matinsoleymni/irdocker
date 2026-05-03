@@ -27,3 +27,18 @@ sudo chmod +x /usr/local/bin/irdocker
 echo ""
 echo "✅ irdocker installed successfully!"
 echo "   Try: irdocker nginx"
+
+# Install bash completion
+COMPLETION_DIR="/etc/bash_completion.d"
+COMPLETION_SRC="$SCRIPT_DIR/completions/irdocker.bash"
+if [ -f "$COMPLETION_SRC" ]; then
+  if [ -d "$COMPLETION_DIR" ]; then
+    sudo cp "$COMPLETION_SRC" "$COMPLETION_DIR/"
+    echo "✅ Bash completion installed to $COMPLETION_DIR/irdocker.bash"
+  else
+    echo "⚠️  Bash completion directory not found: $COMPLETION_DIR"
+    echo "   You can manually source completions/irdocker.bash in your ~/.bashrc"
+  fi
+else
+  echo "⚠️  Bash completion script not found: $COMPLETION_SRC"
+fi
