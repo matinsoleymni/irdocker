@@ -138,3 +138,5 @@ Result: 2 found, 1 not found, 2 error(s)
 ---
 
 Developed with love and Claude 4.6 by MatinSoleymani
+
+Maintained by [mamahoos](https://github.com/mamahoos)
