@@ -1,3 +1,14 @@
+# Check for required files
+[[ -f "$SRC_GO" ]] || { echo "install: missing ${SRC_GO}" >&2; exit 1; }
+[[ -f "$COMP_SRC" ]] || { echo "install: missing ${COMP_SRC}" >&2; exit 1; }
+
+# Parse arguments
+while [[ $# -gt 0 ]]; do
+  case "$1" in
+    -h|--help) usage ;;
+    *) usage ;;
+  esac
+done
 PREFIX="${PREFIX:-/usr/local}"
 BINDIR="${BINDIR:-$PREFIX/bin}"
 COMPDIR="${COMPDIR:-}"
