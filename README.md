@@ -20,6 +20,19 @@ go build -o irdocker .
 sudo mv irdocker /usr/local/bin/
 ```
 
+
+## Bash Completion
+
+If you use Bash, you can enable tab completion for irdocker commands:
+
+```bash
+source completions/irdocker.bash
+# or, if installed system-wide:
+source /etc/bash_completion.d/irdocker.bash
+```
+
+Add the relevant line to your ~/.bashrc for persistent completion.
+
 ## Usage
 
 ```bash
