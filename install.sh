@@ -1,5 +1,11 @@
-#!/bin/bash
-set -e
+
+#!/usr/bin/env bash
+set -euo pipefail
+
+ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+NAME="irdocker"
+SRC_GO="${ROOT}/main.go"
+COMP_SRC="${ROOT}/completions/irdocker.bash"
 
 echo "🔧 Installing irdocker..."
 
