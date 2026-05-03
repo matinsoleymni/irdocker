@@ -1,3 +1,19 @@
+PREFIX="${PREFIX:-/usr/local}"
+BINDIR="${BINDIR:-$PREFIX/bin}"
+COMPDIR="${COMPDIR:-}"
+
+usage() {
+    cat <<'EOF' >&2
+Usage: ./install.sh [options]
+
+  PREFIX=/path     default: /usr/local  (user: PREFIX=~/.local ./install.sh)
+  BINDIR=...       default: PREFIX/bin
+  COMPDIR=...      auto if unset
+  DRY_RUN=1        print actions only
+
+EOF
+    exit 1
+}
 
 #!/usr/bin/env bash
 set -euo pipefail
