@@ -1,3 +1,24 @@
+# Pick completion dir
+pick_compdir() {
+  if [[ -n "$COMPDIR" ]]; then
+    echo "$COMPDIR"
+    return
+  fi
+  for d in \
+    "$PREFIX/share/bash-completion/completions" \
+    /usr/share/bash-completion/completions \
+    /usr/local/share/bash-completion/completions \
+    /etc/bash_completion.d
+  do
+    if [[ -d "$d" ]]; then
+      echo "$d"
+      return
+    fi
+  done
+  echo "$PREFIX/share/bash-completion/completions"
+}
+
+COMPDIR="$(pick_compdir)"
 # Check for required files
 [[ -f "$SRC_GO" ]] || { echo "install: missing ${SRC_GO}" >&2; exit 1; }
 [[ -f "$COMP_SRC" ]] || { echo "install: missing ${COMP_SRC}" >&2; exit 1; }
