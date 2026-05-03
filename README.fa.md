@@ -7,9 +7,9 @@
 ## نصب
 
 ```bash
-git clone https://github.com/matinsoleymni/irdocker
+git clone https://github.com/mamahoos/irdocker
 cd irdocker
-chmod +x install.sh && ./install.sh
+sudo ./install.sh
 ```
 
 یا دستی:

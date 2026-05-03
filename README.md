@@ -8,9 +8,9 @@ Check Iranian Docker mirror registries for image availability — instantly.
 ## Install
 
 ```bash
-git clone https://github.com/matinsoleymni/irdocker
+git clone https://github.com/mamahoos/irdocker
 cd irdocker
-chmod +x install.sh && ./install.sh
+sudo ./install.sh
 ```
 
 Or manually:
@@ -108,6 +108,10 @@ Result: 2 found, 3 not available
 | Iranserver.com   | docker.iranserver.com     |
 | Liara.ir         | docker-mirror.liara.ir    |
 
+
 Custom registries are saved to `~/.irdocker.json`.
 
 Developed with love and Claude 4.6 by MatinSoleymani
+
+---
+Maintained by [mamahoos](https://github.com/mamahoos)
